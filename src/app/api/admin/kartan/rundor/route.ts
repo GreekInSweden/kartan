@@ -19,14 +19,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Fel lösenord." }, { status: 401 });
   }
 
-  if (!kategoriId || !titel || !visadVarde || !typ || !["lan", "punkt"].includes(typ)) {
+  if (!kategoriId || !titel || !visadVarde || !typ || !["lan", "kommun", "punkt"].includes(typ)) {
     return NextResponse.json(
       { error: "kategoriId, titel, visadVarde och giltig typ krävs." },
       { status: 400 }
     );
   }
 
-  if (typ === "lan" && !rattPlatsId) {
+  if ((typ === "lan" || typ === "kommun") && !rattPlatsId) {
     return NextResponse.json(
       { error: "rattPlatsId krävs för länsklick-rundor (klicka på kartan)." },
       { status: 400 }
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
       kategori_id: kategoriId,
       titel,
       typ,
-      ratt_plats_id: typ === "lan" ? rattPlatsId : null,
+      ratt_plats_id: typ === "lan" || typ === "kommun" ? rattPlatsId : null,
       ratt_lat: typ === "punkt" ? rattLat : null,
       ratt_lon: typ === "punkt" ? rattLon : null,
       tolerans_km: typ === "punkt" ? (toleransKm ?? 15) : null,

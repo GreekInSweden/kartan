@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
   const spelareId = searchParams.get("spelareId");
   const typ = searchParams.get("typ");
 
-  if (!spelareId || !typ || !["lan", "punkt"].includes(typ)) {
+  if (!spelareId || !typ || !["lan", "kommun", "punkt"].includes(typ)) {
     return NextResponse.json({ error: "spelareId och giltig typ krävs." }, { status: 400 });
   }
 

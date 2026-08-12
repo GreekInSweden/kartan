@@ -28,7 +28,7 @@ export function useSubmitKartanGuess(spelareId: string): UseSubmitKartanGuessRes
     const { data, error: rpcError } = await supabase.rpc("submit_kartan_guess", {
       p_runda_id: guess.rundaId,
       p_spelare_id: spelareId,
-      p_plats_id: guess.typ === "lan" ? guess.platsId : null,
+      p_plats_id: guess.typ === "lan" || guess.typ === "kommun" ? guess.platsId : null,
       p_guess_lat: guess.typ === "punkt" ? guess.lat : null,
       p_guess_lon: guess.typ === "punkt" ? guess.lon : null,
     });

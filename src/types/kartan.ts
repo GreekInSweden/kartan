@@ -1,6 +1,6 @@
 // Delade typer för Kartan-spelet (Spelmoment 1: länsklick, Spelmoment 2: nålgissning)
 
-export type KartanSpeltyp = "lan" | "punkt";
+export type KartanSpeltyp = "lan" | "kommun" | "punkt";
 
 export interface KartanPlats {
   id: string; // t.ex. "01" (länskod) eller "0138" (kommunkod)
@@ -31,7 +31,7 @@ export interface KartanRunda {
 }
 
 export interface KartanGuessRegion {
-  typ: "lan";
+  typ: "lan" | "kommun";
   rundaId: string;
   platsId: string;
 }

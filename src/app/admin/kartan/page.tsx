@@ -180,6 +180,12 @@ function NyKategoriForm({
           Länsklick
         </button>
         <button
+          className={`${styles.typeButton} ${typ === "kommun" ? styles.typeButtonActive : ""}`}
+          onClick={() => setTyp("kommun")}
+        >
+          Kommunklick
+        </button>
+        <button
           className={`${styles.typeButton} ${typ === "punkt" ? styles.typeButtonActive : ""}`}
           onClick={() => setTyp("punkt")}
         >
@@ -280,7 +286,9 @@ function NyRundaForm({
     kategoriId &&
     titel &&
     visadVarde &&
-    ((typ === "lan" && pickedPlatsId) || (typ === "punkt" && pickedPoint));
+    ((typ === "lan" && pickedPlatsId) ||
+      (typ === "kommun" && pickedPlatsId) ||
+      (typ === "punkt" && pickedPoint));
 
   return (
     <div className={styles.section}>
@@ -338,11 +346,15 @@ function NyRundaForm({
           <p className={styles.pickerHint}>
             {typ === "lan"
               ? "Klicka på rätt län i kartan nedan."
+              : typ === "kommun"
+              ? "Klicka på rätt kommun i kartan nedan."
               : "Klicka på rätt plats i kartan nedan."}
           </p>
 
           {pickedPlatsNamn && (
-            <p className={styles.pickedValue}>Valt län: {pickedPlatsNamn}</p>
+            <p className={styles.pickedValue}>
+              Vald {typ === "kommun" ? "kommun" : "län"}: {pickedPlatsNamn}
+            </p>
           )}
           {pickedPoint && (
             <p className={styles.pickedValue}>
@@ -352,8 +364,8 @@ function NyRundaForm({
 
           <div style={{ maxWidth: 320, marginBottom: 16 }}>
             <KartanSvgMap
-              geoSource="sweden-regions"
-              clickMode={typ === "lan" ? "region" : "point"}
+              geoSource={typ === "kommun" ? "sweden-municipalities" : "sweden-regions"}
+              clickMode={typ === "punkt" ? "point" : "region"}
               guessRegionId={pickedPlatsId}
               guessPoint={pickedPoint}
               revealed={false}

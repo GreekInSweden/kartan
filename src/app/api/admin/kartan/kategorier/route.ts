@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Fel lösenord." }, { status: 401 });
   }
 
-  if (!namn || !typ || !["lan", "punkt"].includes(typ)) {
+  if (!namn || !typ || !["lan", "kommun", "punkt"].includes(typ)) {
     return NextResponse.json({ error: "namn och giltig typ krävs." }, { status: 400 });
   }
 
