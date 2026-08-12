@@ -175,6 +175,68 @@
   color: #e8917a;
 }
 
+/* --- Statistik & kvar-räknare (sidebar topp/botten) --- */
+
+.statsCard {
+  background: #12161f;
+  border: 1px solid #232a36;
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 18px;
+}
+
+.statsTitle {
+  font-size: 10px;
+  color: #8b94a3;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.statsRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #c9cfda;
+  padding: 3px 0;
+}
+
+.statsRowValue {
+  color: #f2f0e8;
+  font-weight: 600;
+}
+
+.quotaCard {
+  margin-top: auto;
+  padding-top: 18px;
+}
+
+.quotaBarTrack {
+  height: 6px;
+  background: #1c222c;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+
+.quotaBarFill {
+  height: 100%;
+  background: #e8b84b;
+  border-radius: 999px;
+  transition: width 400ms ease;
+}
+
+.quotaLabel {
+  font-size: 12px;
+  color: #8b94a3;
+}
+
+.quotaDone {
+  font-size: 12px;
+  color: #7fc8a0;
+  margin-top: 6px;
+}
+
 /* --- Layout: sida-vid-sida på desktop, staplat på mobil --- */
 
 .gameLayout {
@@ -205,7 +267,7 @@
   .sidebar {
     width: 320px;
     flex-shrink: 0;
-    justify-content: center;
+    justify-content: flex-start;
   }
 
   .mapArea {

@@ -19,7 +19,7 @@ export default function KartanPage() {
         </p>
         <h1 className="text-2xl sm:text-3xl font-semibold mb-5">Kartan</h1>
 
-        <div className="flex gap-2 mb-8">
+        <div className="flex items-center gap-2 mb-8">
           <button
             onClick={() => setMode("lan")}
             className={`px-4 py-2 rounded-lg text-sm tracking-wide border transition-colors ${
@@ -40,6 +40,13 @@ export default function KartanPage() {
           >
             Nålgissning
           </button>
+
+          <Link
+            href="/admin/kartan"
+            className="ml-auto px-3 py-2 rounded-lg text-xs tracking-wide border border-[#232a36] text-[#5a6270] hover:text-[#8b94a3] hover:border-[#3a4250] transition-colors"
+          >
+            Admin
+          </Link>
         </div>
 
         {mode === "lan" ? (
@@ -48,12 +55,6 @@ export default function KartanPage() {
           <NalgissningGame spelareId={DEMO_SPELARE_ID} />
         )}
       </div>
-
-      <footer className="px-4 py-4 text-center">
-        <Link href="/admin/kartan" className="text-[11px] text-[#3a4250] hover:text-[#8b94a3]">
-          Admin
-        </Link>
-      </footer>
     </main>
   );
 }

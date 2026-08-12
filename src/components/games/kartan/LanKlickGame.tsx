@@ -4,6 +4,7 @@ import { useState } from "react";
 import { KartanSvgMap } from "./KartanSvgMap";
 import { useKartanRound } from "@/hooks/useKartanRound";
 import { useSubmitKartanGuess } from "@/hooks/useSubmitKartanGuess";
+import { useKartanStats } from "@/hooks/useKartanStats";
 import type { KartanGuessResultat } from "@/types/kartan";
 import styles from "./kartan.module.css";
 
@@ -21,12 +22,52 @@ function friendlyError(message: string): string {
 /** Spelmoment 1 — spelaren klickar det län som svarar på frågan. */
 export function LanKlickGame({ spelareId }: LanKlickGameProps) {
   const [roundKey, setRoundKey] = useState(0);
+  const [statsKey, setStatsKey] = useState(0);
   const { runda, loading, error } = useKartanRound("lan", roundKey);
   const { submitGuess, submitting, error: guessError } = useSubmitKartanGuess(spelareId);
+  const { stats } = useKartanStats(spelareId, "lan", statsKey);
 
   const [guessId, setGuessId] = useState<string | null>(null);
   const [guessName, setGuessName] = useState<string | null>(null);
   const [resultat, setResultat] = useState<KartanGuessResultat | null>(null);
+
+  const statsCard = stats && (
+    <div className={styles.statsCard}>
+      <p className={styles.statsTitle}>Din statistik</p>
+      <div className={styles.statsRow}>
+        <span>Rundor spelade</span>
+        <span className={styles.statsRowValue}>{stats.spelade}</span>
+      </div>
+      <div className={styles.statsRow}>
+        <span>Snittpoäng</span>
+        <span className={styles.statsRowValue}>{stats.snittPoang}</span>
+      </div>
+      <div className={styles.statsRow}>
+        <span>Bästa resultat</span>
+        <span className={styles.statsRowValue}>{stats.bastaPoang}</span>
+      </div>
+    </div>
+  );
+
+  const quotaCard = stats && stats.totaltAntal > 0 && (
+    <div className={styles.quotaCard}>
+      {stats.kvarAntal > 0 ? (
+        <>
+          <p className={styles.quotaLabel}>
+            {stats.kvarAntal} av {stats.totaltAntal} rundor kvar att spela
+          </p>
+          <div className={styles.quotaBarTrack}>
+            <div
+              className={styles.quotaBarFill}
+              style={{ width: `${(stats.spelade / stats.totaltAntal) * 100}%` }}
+            />
+          </div>
+        </>
+      ) : (
+        <p className={styles.quotaDone}>Du har spelat alla {stats.totaltAntal} rundor!</p>
+      )}
+    </div>
+  );
 
   if (loading) return <p style={{ color: "#8b94a3" }}>Laddar runda…</p>;
   if (error) return <p style={{ color: "#e8917a" }}>Något gick fel: {error}</p>;
@@ -44,14 +85,17 @@ export function LanKlickGame({ spelareId }: LanKlickGameProps) {
   async function handleVisaSvar() {
     if (!guessId || !runda) return;
     const res = await submitGuess({ typ: "lan", rundaId: runda.id, platsId: guessId });
-    if (res) setResultat(res);
+    if (res) {
+      setResultat(res);
+      setStatsKey((k) => k + 1);
+    }
   }
 
   function handleNyRunda() {
     setGuessId(null);
     setGuessName(null);
     setResultat(null);
-    setRoundKey((k) => k + 1); // hämtar en NY slumpad runda, inte samma igen
+    setRoundKey((k) => k + 1); // hämtar en NY slumpad runda + uppdaterar statistik
   }
 
   const revealed = resultat !== null;
@@ -59,6 +103,8 @@ export function LanKlickGame({ spelareId }: LanKlickGameProps) {
   return (
     <div className={styles.gameLayout}>
       <div className={styles.sidebar}>
+        {statsCard}
+
         <p className={styles.category}>{runda.titel}</p>
 
         {!revealed ? (
@@ -91,6 +137,8 @@ export function LanKlickGame({ spelareId }: LanKlickGameProps) {
             </button>
           </div>
         )}
+
+        {quotaCard}
       </div>
 
       <div className={styles.mapArea}>

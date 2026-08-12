@@ -4,6 +4,7 @@ import { useState } from "react";
 import { KartanSvgMap } from "./KartanSvgMap";
 import { useKartanRound } from "@/hooks/useKartanRound";
 import { useSubmitKartanGuess } from "@/hooks/useSubmitKartanGuess";
+import { useKartanStats } from "@/hooks/useKartanStats";
 import type { KartanGuessResultat } from "@/types/kartan";
 import styles from "./kartan.module.css";
 
@@ -21,11 +22,51 @@ function friendlyError(message: string): string {
 /** Spelmoment 2 — spelaren droppar en nål var som helst på kartan. Poäng baseras på avstånd. */
 export function NalgissningGame({ spelareId }: NalgissningGameProps) {
   const [roundKey, setRoundKey] = useState(0);
+  const [statsKey, setStatsKey] = useState(0);
   const { runda, loading, error } = useKartanRound("punkt", roundKey);
   const { submitGuess, submitting, error: guessError } = useSubmitKartanGuess(spelareId);
+  const { stats } = useKartanStats(spelareId, "punkt", statsKey);
 
   const [guessPoint, setGuessPoint] = useState<{ lat: number; lon: number } | null>(null);
   const [resultat, setResultat] = useState<KartanGuessResultat | null>(null);
+
+  const statsCard = stats && (
+    <div className={styles.statsCard}>
+      <p className={styles.statsTitle}>Din statistik</p>
+      <div className={styles.statsRow}>
+        <span>Rundor spelade</span>
+        <span className={styles.statsRowValue}>{stats.spelade}</span>
+      </div>
+      <div className={styles.statsRow}>
+        <span>Snittpoäng</span>
+        <span className={styles.statsRowValue}>{stats.snittPoang}</span>
+      </div>
+      <div className={styles.statsRow}>
+        <span>Bästa resultat</span>
+        <span className={styles.statsRowValue}>{stats.bastaPoang}</span>
+      </div>
+    </div>
+  );
+
+  const quotaCard = stats && stats.totaltAntal > 0 && (
+    <div className={styles.quotaCard}>
+      {stats.kvarAntal > 0 ? (
+        <>
+          <p className={styles.quotaLabel}>
+            {stats.kvarAntal} av {stats.totaltAntal} rundor kvar att spela
+          </p>
+          <div className={styles.quotaBarTrack}>
+            <div
+              className={styles.quotaBarFill}
+              style={{ width: `${(stats.spelade / stats.totaltAntal) * 100}%` }}
+            />
+          </div>
+        </>
+      ) : (
+        <p className={styles.quotaDone}>Du har spelat alla {stats.totaltAntal} rundor!</p>
+      )}
+    </div>
+  );
 
   if (loading) return <p style={{ color: "#8b94a3" }}>Laddar runda…</p>;
   if (error) return <p style={{ color: "#e8917a" }}>Något gick fel: {error}</p>;
@@ -48,7 +89,10 @@ export function NalgissningGame({ spelareId }: NalgissningGameProps) {
       lat: guessPoint.lat,
       lon: guessPoint.lon,
     });
-    if (res) setResultat(res);
+    if (res) {
+      setResultat(res);
+      setStatsKey((k) => k + 1);
+    }
   }
 
   function handleNyRunda() {
@@ -66,6 +110,8 @@ export function NalgissningGame({ spelareId }: NalgissningGameProps) {
   return (
     <div className={styles.gameLayout}>
       <div className={styles.sidebar}>
+        {statsCard}
+
         <p className={styles.category}>{runda.titel}</p>
 
         {!revealed ? (
@@ -92,6 +138,8 @@ export function NalgissningGame({ spelareId }: NalgissningGameProps) {
             </button>
           </div>
         )}
+
+        {quotaCard}
       </div>
 
       <div className={styles.mapArea}>
