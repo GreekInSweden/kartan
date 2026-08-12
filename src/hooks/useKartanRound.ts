@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client"; // återanvänder ert befintliga Supabase-klient-helper
-import type { KartanRunda } from "@/types/kartan";
+import { createClient } from "@/lib/supabase/client";
+import type { KartanRunda, KartanSpeltyp } from "@/types/kartan";
 
 interface UseKartanRoundResult {
   runda: KartanRunda | null;
@@ -11,11 +11,20 @@ interface UseKartanRoundResult {
 }
 
 /**
- * Hämtar den aktiva rundan för en given kategori. OBS: rätt svar (rattPlatsId / rattLat / rattLon)
- * skickas ALDRIG till klienten här — precis som KanDuAlla:s /api/game/guess-mönster valideras
- * gissningen och avslöjas facit endast av submit_kartan_guess-RPC:en efter att spelaren gissat.
+ * Hämtar en SLUMPAD aktiv runda av given typ ("lan" eller "punkt"), oavsett
+ * vilken kategori den tillhör. Detta gör att alla kategorier ni skapar via
+ * admin-gränssnittet faktiskt roterar i spelet, istället för att bara en
+ * hårdkodad kategori någonsin visas.
+ *
+ * OBS: rätt svar (rattPlatsId / rattLat / rattLon) skickas ALDRIG till
+ * klienten här — precis som KanDuAlla:s /api/game/guess-mönster valideras
+ * gissningen och avslöjas facit endast av submit_kartan_guess-RPC:en efter
+ * att spelaren gissat.
+ *
+ * `refreshKey` — ändra detta värde (t.ex. en räknare som ökas) för att
+ * tvinga fram en NY slumpad runda, t.ex. när spelaren klickar "Ny runda".
  */
-export function useKartanRound(kategoriId: string): UseKartanRoundResult {
+export function useKartanRound(typ: KartanSpeltyp, refreshKey: number = 0): UseKartanRoundResult {
   const [runda, setRunda] = useState<KartanRunda | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -30,20 +39,9 @@ export function useKartanRound(kategoriId: string): UseKartanRoundResult {
 
       const { data, error: dbError } = await supabase
         .from("kartan_rundor")
-        .select(
-          `
-          id,
-          kategori_id,
-          titel,
-          typ,
-          kartan_kategorier ( namn, beskrivning )
-        `
-        )
-        .eq("kategori_id", kategoriId)
-        .eq("is_aktiv", true)
-        .order("skapad_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .select("id, kategori_id, titel, typ")
+        .eq("typ", typ)
+        .eq("is_aktiv", true);
 
       if (cancelled) return;
 
@@ -53,18 +51,20 @@ export function useKartanRound(kategoriId: string): UseKartanRoundResult {
         return;
       }
 
-      if (!data) {
+      if (!data || data.length === 0) {
         setRunda(null);
         setLoading(false);
         return;
       }
 
+      const vald = data[Math.floor(Math.random() * data.length)];
+
       setRunda({
-        id: data.id,
-        kategoriId: data.kategori_id,
-        titel: data.titel,
-        typ: data.typ,
-        visadVarde: "", // fylls i efter gissning, se useSubmitKartanGuess
+        id: vald.id,
+        kategoriId: vald.kategori_id,
+        titel: vald.titel,
+        typ: vald.typ,
+        visadVarde: "",
       });
       setLoading(false);
     }
@@ -73,7 +73,7 @@ export function useKartanRound(kategoriId: string): UseKartanRoundResult {
     return () => {
       cancelled = true;
     };
-  }, [kategoriId]);
+  }, [typ, refreshKey]);
 
   return { runda, loading, error };
 }

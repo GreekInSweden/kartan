@@ -8,20 +8,20 @@ import type { KartanGuessResultat } from "@/types/kartan";
 import styles from "./kartan.module.css";
 
 interface NalgissningGameProps {
-  kategoriId: string;
   spelareId: string;
 }
 
 function friendlyError(message: string): string {
   if (message.includes("redan gissat")) {
-    return "Du har redan gissat på den här rundan. Skapa en ny testrunda i Supabase för att prova igen.";
+    return "Du har redan gissat på den här rundan.";
   }
   return message;
 }
 
 /** Spelmoment 2 — spelaren droppar en nål var som helst på kartan. Poäng baseras på avstånd. */
-export function NalgissningGame({ kategoriId, spelareId }: NalgissningGameProps) {
-  const { runda, loading, error } = useKartanRound(kategoriId);
+export function NalgissningGame({ spelareId }: NalgissningGameProps) {
+  const [roundKey, setRoundKey] = useState(0);
+  const { runda, loading, error } = useKartanRound("punkt", roundKey);
   const { submitGuess, submitting, error: guessError } = useSubmitKartanGuess(spelareId);
 
   const [guessPoint, setGuessPoint] = useState<{ lat: number; lon: number } | null>(null);
@@ -29,7 +29,16 @@ export function NalgissningGame({ kategoriId, spelareId }: NalgissningGameProps)
 
   if (loading) return <p style={{ color: "#8b94a3" }}>Laddar runda…</p>;
   if (error) return <p style={{ color: "#e8917a" }}>Något gick fel: {error}</p>;
-  if (!runda) return <p style={{ color: "#8b94a3" }}>Ingen aktiv runda just nu.</p>;
+  if (!runda)
+    return (
+      <p style={{ color: "#8b94a3" }}>
+        Ingen aktiv runda just nu. Skapa en i{" "}
+        <a href="/admin/kartan" style={{ color: "#e8b84b" }}>
+          admin-gränssnittet
+        </a>
+        .
+      </p>
+    );
 
   async function handleVisaSvar() {
     if (!guessPoint || !runda) return;
@@ -45,6 +54,7 @@ export function NalgissningGame({ kategoriId, spelareId }: NalgissningGameProps)
   function handleNyRunda() {
     setGuessPoint(null);
     setResultat(null);
+    setRoundKey((k) => k + 1);
   }
 
   const revealed = resultat !== null;

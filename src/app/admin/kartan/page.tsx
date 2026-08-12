@@ -82,6 +82,9 @@ export default function AdminKartanPage() {
       <div className={styles.container}>
         <p className={styles.eyebrow}>KAN DU ALLA — ADMIN</p>
         <h1 className={styles.title}>Kartan</h1>
+        <a href="/spel/kartan" style={{ color: "#8b94a3", fontSize: 12, display: "inline-block", marginBottom: 20 }}>
+          ← Till spelet
+        </a>
 
         <NyKategoriForm
           adminPassword={password}

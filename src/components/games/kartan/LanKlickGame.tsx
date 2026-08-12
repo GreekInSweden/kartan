@@ -8,21 +8,20 @@ import type { KartanGuessResultat } from "@/types/kartan";
 import styles from "./kartan.module.css";
 
 interface LanKlickGameProps {
-  kategoriId: string;
   spelareId: string;
 }
 
-/** Vänder rå Postgres-felmeddelanden till nåt en spelare faktiskt förstår. */
 function friendlyError(message: string): string {
   if (message.includes("redan gissat")) {
-    return "Du har redan gissat på den här rundan. Skapa en ny testrunda i Supabase för att prova igen.";
+    return "Du har redan gissat på den här rundan.";
   }
   return message;
 }
 
 /** Spelmoment 1 — spelaren klickar det län som svarar på frågan. */
-export function LanKlickGame({ kategoriId, spelareId }: LanKlickGameProps) {
-  const { runda, loading, error } = useKartanRound(kategoriId);
+export function LanKlickGame({ spelareId }: LanKlickGameProps) {
+  const [roundKey, setRoundKey] = useState(0);
+  const { runda, loading, error } = useKartanRound("lan", roundKey);
   const { submitGuess, submitting, error: guessError } = useSubmitKartanGuess(spelareId);
 
   const [guessId, setGuessId] = useState<string | null>(null);
@@ -31,7 +30,16 @@ export function LanKlickGame({ kategoriId, spelareId }: LanKlickGameProps) {
 
   if (loading) return <p style={{ color: "#8b94a3" }}>Laddar runda…</p>;
   if (error) return <p style={{ color: "#e8917a" }}>Något gick fel: {error}</p>;
-  if (!runda) return <p style={{ color: "#8b94a3" }}>Ingen aktiv runda just nu.</p>;
+  if (!runda)
+    return (
+      <p style={{ color: "#8b94a3" }}>
+        Ingen aktiv runda just nu. Skapa en i{" "}
+        <a href="/admin/kartan" style={{ color: "#e8b84b" }}>
+          admin-gränssnittet
+        </a>
+        .
+      </p>
+    );
 
   async function handleVisaSvar() {
     if (!guessId || !runda) return;
@@ -43,6 +51,7 @@ export function LanKlickGame({ kategoriId, spelareId }: LanKlickGameProps) {
     setGuessId(null);
     setGuessName(null);
     setResultat(null);
+    setRoundKey((k) => k + 1); // hämtar en NY slumpad runda, inte samma igen
   }
 
   const revealed = resultat !== null;

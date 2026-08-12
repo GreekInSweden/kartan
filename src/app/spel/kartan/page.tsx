@@ -1,22 +1,19 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { LanKlickGame } from "@/components/games/kartan/LanKlickGame";
 import { NalgissningGame } from "@/components/games/kartan/NalgissningGame";
 
 // TODO: hämta från er befintliga spelare/session-context istället för hårdkodning
 const DEMO_SPELARE_ID = "00000000-0000-0000-0000-000000000000";
 
-// Riktiga kategori-id:n (byt ut om ni skapar nya testkategorier)
-const DEMO_KATEGORI_LAN = "f2adc7b0-0983-4641-9641-55a796586f53";
-const DEMO_KATEGORI_PUNKT = "184b26e5-dd6f-4153-a6c3-6e4cf520526c";
-
 export default function KartanPage() {
   const [mode, setMode] = useState<"lan" | "punkt">("lan");
 
   return (
-    <main className="min-h-screen bg-[#0b0e14] text-[#f2f0e8]">
-      <div className="mx-auto max-w-5xl px-4 py-8 sm:py-10">
+    <main className="min-h-screen bg-[#0b0e14] text-[#f2f0e8] flex flex-col">
+      <div className="mx-auto max-w-5xl px-4 py-8 sm:py-10 flex-1 w-full">
         <p className="text-[11px] tracking-[0.18em] text-[#8b94a3] mb-2">
           KAN DU ALLA
         </p>
@@ -46,11 +43,17 @@ export default function KartanPage() {
         </div>
 
         {mode === "lan" ? (
-          <LanKlickGame kategoriId={DEMO_KATEGORI_LAN} spelareId={DEMO_SPELARE_ID} />
+          <LanKlickGame spelareId={DEMO_SPELARE_ID} />
         ) : (
-          <NalgissningGame kategoriId={DEMO_KATEGORI_PUNKT} spelareId={DEMO_SPELARE_ID} />
+          <NalgissningGame spelareId={DEMO_SPELARE_ID} />
         )}
       </div>
+
+      <footer className="px-4 py-4 text-center">
+        <Link href="/admin/kartan" className="text-[11px] text-[#3a4250] hover:text-[#8b94a3]">
+          Admin
+        </Link>
+      </footer>
     </main>
   );
 }
