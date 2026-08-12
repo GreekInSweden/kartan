@@ -66,16 +66,20 @@ export function KartanSvgMap({
     );
   }
 
+  // TypeScript kan inte smalna av `projection` inuti nästlade funktioner (closures),
+  // trots early-return-guarden ovan — så vi binder en garanterat icke-null referens här.
+  const proj = projection;
+
   // Projicera facit/gissning till pixelkoordinater för reveal-animationen
   const correctPixel =
     clickMode === "point" && correctPoint
-      ? projection([correctPoint.lon, correctPoint.lat])
+      ? proj([correctPoint.lon, correctPoint.lat])
       : clickMode === "region" && correctRegionId
-      ? centroidOfFeature(geoData, correctRegionId, projection)
+      ? centroidOfFeature(geoData, correctRegionId, proj)
       : null;
 
   const guessPixel =
-    clickMode === "point" && guessPoint ? projection([guessPoint.lon, guessPoint.lat]) : null;
+    clickMode === "point" && guessPoint ? proj([guessPoint.lon, guessPoint.lat]) : null;
 
   const zoomStyle =
     revealed && correctPixel
@@ -90,7 +94,7 @@ export function KartanSvgMap({
     const rect = svgRef.current.getBoundingClientRect();
     const px = ((e.clientX - rect.left) / rect.width) * VIEWPORT_W;
     const py = ((e.clientY - rect.top) / rect.height) * VIEWPORT_H;
-    const inverted = projection.invert?.([px, py]);
+    const inverted = proj.invert?.([px, py]);
     if (!inverted) return;
     const [lon, lat] = inverted;
     onMapClick(lat, lon, { x: px, y: py });
