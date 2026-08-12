@@ -1,9 +1,16 @@
 /* Kartan — design tokens delade med prototypen (split-flap/night-map känsla) */
 
 .category {
-  font-size: 15px;
+  font-size: 16px;
   color: #f2f0e8;
-  margin-bottom: 10px;
+  margin-bottom: 14px;
+  font-weight: 500;
+}
+
+.mapWrap {
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid #232a36;
 }
 
 .mapSvg {
@@ -29,14 +36,16 @@
 
 .region {
   fill: #1e2a38;
-  stroke: #232a36;
-  stroke-width: 0.6;
+  stroke: #4a5a70;
+  stroke-width: 0.9;
+  stroke-linejoin: round;
   transition: fill 300ms ease, opacity 500ms ease;
   cursor: pointer;
 }
 
 .region:hover {
-  fill: #2a3a4d;
+  fill: #32465c;
+  stroke: #6b8cae;
 }
 
 .regionGuess {
@@ -78,6 +87,84 @@
   stroke: #8b94a3;
   stroke-width: 0.8;
   stroke-dasharray: 3 3;
+}
+
+/* --- Knappar & resultatkort (delas av LanKlickGame och NalgissningGame) --- */
+
+.primaryButton {
+  width: 100%;
+  padding: 15px 0;
+  border-radius: 10px;
+  border: none;
+  background: #e8b84b;
+  color: #0b0e14;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 200ms ease, transform 150ms ease;
+}
+
+.primaryButton:hover:not(:disabled) {
+  background: #f0c667;
+}
+
+.primaryButton:disabled {
+  background: #232a36;
+  color: #5a6270;
+  cursor: not-allowed;
+}
+
+.resultCard {
+  background: #12161f;
+  border: 1px solid #e8b84b55;
+  border-radius: 12px;
+  padding: 20px 22px;
+  margin-top: 16px;
+}
+
+.resultLabel {
+  font-size: 11px;
+  color: #8b94a3;
+  letter-spacing: 0.12em;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+
+.resultValue {
+  font-size: 17px;
+  color: #f2f0e8;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.resultDetail {
+  font-size: 14px;
+  color: #c9cfda;
+  margin-bottom: 4px;
+}
+
+.resultDetailGood {
+  color: #e8b84b;
+}
+
+.secondaryButton {
+  margin-top: 16px;
+  background: none;
+  border: 1px solid #3a4250;
+  color: #c9cfda;
+  border-radius: 8px;
+  padding: 10px 18px;
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color 200ms ease, color 200ms ease;
+}
+
+.secondaryButton:hover {
+  border-color: #e8b84b;
+  color: #e8b84b;
 }
 
 @keyframes pulseGlow {

@@ -21,9 +21,9 @@ export function LanKlickGame({ kategoriId, spelareId }: LanKlickGameProps) {
   const [guessName, setGuessName] = useState<string | null>(null);
   const [resultat, setResultat] = useState<KartanGuessResultat | null>(null);
 
-  if (loading) return <p>Laddar runda…</p>;
-  if (error) return <p>Något gick fel: {error}</p>;
-  if (!runda) return <p>Ingen aktiv runda just nu.</p>;
+  if (loading) return <p style={{ color: "#8b94a3" }}>Laddar runda…</p>;
+  if (error) return <p style={{ color: "#e8917a" }}>Något gick fel: {error}</p>;
+  if (!runda) return <p style={{ color: "#8b94a3" }}>Ingen aktiv runda just nu.</p>;
 
   async function handleVisaSvar() {
     if (!guessId || !runda) return;
@@ -58,15 +58,24 @@ export function LanKlickGame({ kategoriId, spelareId }: LanKlickGameProps) {
       />
 
       {!revealed ? (
-        <button disabled={!guessId || submitting} onClick={handleVisaSvar}>
+        <button
+          className={styles.primaryButton}
+          disabled={!guessId || submitting}
+          onClick={handleVisaSvar}
+        >
           {guessId ? `Visa svar (gissning: ${guessName})` : "Välj ett län"}
         </button>
       ) : (
-        <div>
-          <p>Rätt svar: {resultat?.visadVarde}</p>
-          <p>{resultat?.korrekt ? "Helt rätt!" : "Inte riktigt — men nära nog?"}</p>
-          <p>Poäng: {resultat?.poang}</p>
-          <button onClick={handleNyRunda}>Ny runda</button>
+        <div className={styles.resultCard}>
+          <p className={styles.resultLabel}>Rätt svar</p>
+          <p className={styles.resultValue}>{resultat?.visadVarde}</p>
+          <p className={resultat?.korrekt ? `${styles.resultDetail} ${styles.resultDetailGood}` : styles.resultDetail}>
+            {resultat?.korrekt ? "Helt rätt!" : "Inte riktigt — men nära nog?"}
+          </p>
+          <p className={styles.resultDetail}>Poäng: {resultat?.poang}</p>
+          <button className={styles.secondaryButton} onClick={handleNyRunda}>
+            Ny runda
+          </button>
         </div>
       )}
     </div>

@@ -101,60 +101,62 @@ export function KartanSvgMap({
   }
 
   return (
-    <svg
-      ref={svgRef}
-      viewBox={`0 0 ${VIEWPORT_W} ${VIEWPORT_H}`}
-      className={styles.mapSvg}
-      onClick={handleSvgClick}
-      style={{ cursor: clickMode === "point" && !revealed ? "crosshair" : "default" }}
-    >
-      <g className={styles.zoomGroup} style={zoomStyle}>
-        {geoData.features.map((feature) => {
-          const id = String((feature.properties as { id: string }).id);
-          const isGuess = clickMode === "region" && guessRegionId === id;
-          const isCorrect = clickMode === "region" && revealed && correctRegionId === id;
-          const d = path(feature) ?? undefined;
+    <div className={styles.mapWrap}>
+      <svg
+        ref={svgRef}
+        viewBox={`0 0 ${VIEWPORT_W} ${VIEWPORT_H}`}
+        className={styles.mapSvg}
+        onClick={handleSvgClick}
+        style={{ cursor: clickMode === "point" && !revealed ? "crosshair" : "default" }}
+      >
+        <g className={styles.zoomGroup} style={zoomStyle}>
+          {geoData.features.map((feature) => {
+            const id = String((feature.properties as { id: string }).id);
+            const isGuess = clickMode === "region" && guessRegionId === id;
+            const isCorrect = clickMode === "region" && revealed && correctRegionId === id;
+            const d = path(feature) ?? undefined;
 
-          let className = styles.region;
-          if (isCorrect) className += ` ${styles.regionCorrect}`;
-          else if (isGuess) className += ` ${styles.regionGuess}`;
-          else if (revealed) className += ` ${styles.regionDimmed}`;
+            let className = styles.region;
+            if (isCorrect) className += ` ${styles.regionCorrect}`;
+            else if (isGuess) className += ` ${styles.regionGuess}`;
+            else if (revealed) className += ` ${styles.regionDimmed}`;
 
-          return (
-            <path
-              key={id}
-              d={d}
-              className={className}
-              onClick={() => {
-                if (clickMode === "region" && !revealed && onRegionClick) {
-                  onRegionClick(id, (feature.properties as { name: string }).name);
-                }
-              }}
-            />
-          );
-        })}
-
-        {clickMode === "point" && guessPixel && (
-          <circle cx={guessPixel[0]} cy={guessPixel[1]} r={5} className={styles.guessDot} />
-        )}
-
-        {clickMode === "point" && revealed && correctPixel && (
-          <>
-            {guessPixel && (
-              <line
-                x1={guessPixel[0]}
-                y1={guessPixel[1]}
-                x2={correctPixel[0]}
-                y2={correctPixel[1]}
-                className={styles.distanceLine}
+            return (
+              <path
+                key={id}
+                d={d}
+                className={className}
+                onClick={() => {
+                  if (clickMode === "region" && !revealed && onRegionClick) {
+                    onRegionClick(id, (feature.properties as { name: string }).name);
+                  }
+                }}
               />
-            )}
-            <circle cx={correctPixel[0]} cy={correctPixel[1]} r={4} className={styles.correctDot} />
-            <circle cx={correctPixel[0]} cy={correctPixel[1]} r={4} className={styles.pingRing} />
-          </>
-        )}
-      </g>
-    </svg>
+            );
+          })}
+
+          {clickMode === "point" && guessPixel && (
+            <circle cx={guessPixel[0]} cy={guessPixel[1]} r={5} className={styles.guessDot} />
+          )}
+
+          {clickMode === "point" && revealed && correctPixel && (
+            <>
+              {guessPixel && (
+                <line
+                  x1={guessPixel[0]}
+                  y1={guessPixel[1]}
+                  x2={correctPixel[0]}
+                  y2={correctPixel[1]}
+                  className={styles.distanceLine}
+                />
+              )}
+              <circle cx={correctPixel[0]} cy={correctPixel[1]} r={4} className={styles.correctDot} />
+              <circle cx={correctPixel[0]} cy={correctPixel[1]} r={4} className={styles.pingRing} />
+            </>
+          )}
+        </g>
+      </svg>
+    </div>
   );
 }
 
