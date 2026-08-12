@@ -12,11 +12,15 @@ interface RundaListItem {
   typ: KartanSpeltyp;
   is_aktiv: boolean;
   visad_varde: string;
+  ratt_plats_id: string | null;
+  ratt_lat: number | null;
+  ratt_lon: number | null;
 }
 
 export default function AdminKartanPage() {
   const [password, setPassword] = useState("");
   const [unlocked, setUnlocked] = useState(false);
+  const [testandeId, setTestandeId] = useState<string | null>(null);
 
   const [kategorier, setKategorier] = useState<KartanKategori[]>([]);
   const [rundorByKategori, setRundorByKategori] = useState<Record<string, RundaListItem[]>>({});
@@ -38,7 +42,7 @@ export default function AdminKartanPage() {
 
     const { data: rundor } = await supabase
       .from("kartan_rundor")
-      .select("id, kategori_id, titel, typ, is_aktiv, visad_varde")
+      .select("id, kategori_id, titel, typ, is_aktiv, visad_varde, ratt_plats_id, ratt_lat, ratt_lon")
       .order("skapad_at", { ascending: false });
 
     const grouped: Record<string, RundaListItem[]> = {};
@@ -107,14 +111,53 @@ export default function AdminKartanPage() {
               <p style={{ fontWeight: 600, marginBottom: 4 }}>
                 {k.namn} <span className={styles.listItemMeta}>({k.typ})</span>
               </p>
-              {(rundorByKategori[k.id] ?? []).map((r) => (
-                <div key={r.id} className={styles.listItem}>
-                  {r.titel}{" "}
-                  <span className={styles.listItemMeta}>
-                    — {r.visad_varde} {r.is_aktiv ? "· aktiv" : "· inaktiv"}
-                  </span>
-                </div>
-              ))}
+              {(rundorByKategori[k.id] ?? []).map((r) => {
+                const testarNu = testandeId === r.id;
+                return (
+                  <div key={r.id} className={styles.listItem}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
+                      <span>
+                        {r.titel}{" "}
+                        <span className={styles.listItemMeta}>
+                          — {r.visad_varde} {r.is_aktiv ? "· aktiv" : "· inaktiv"}
+                        </span>
+                      </span>
+                      <button
+                        onClick={() => setTestandeId(testarNu ? null : r.id)}
+                        style={{
+                          flexShrink: 0,
+                          background: "none",
+                          border: "1px solid #3a4250",
+                          color: testarNu ? "#e8b84b" : "#8b94a3",
+                          borderRadius: 6,
+                          padding: "4px 10px",
+                          fontFamily: "inherit",
+                          fontSize: 11,
+                          cursor: "pointer",
+                        }}
+                      >
+                        {testarNu ? "Stäng" : "Testa"}
+                      </button>
+                    </div>
+
+                    {testarNu && (
+                      <div style={{ maxWidth: 280, margin: "10px 0" }}>
+                        <KartanSvgMap
+                          geoSource={r.typ === "kommun" ? "sweden-municipalities" : "sweden-regions"}
+                          clickMode={r.typ === "punkt" ? "point" : "region"}
+                          revealed={true}
+                          correctRegionId={r.typ !== "punkt" ? r.ratt_plats_id : null}
+                          correctPoint={
+                            r.typ === "punkt" && r.ratt_lat != null && r.ratt_lon != null
+                              ? { lat: r.ratt_lat, lon: r.ratt_lon }
+                              : null
+                          }
+                        />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
               {(rundorByKategori[k.id] ?? []).length === 0 && (
                 <p className={styles.listItemMeta}>Inga rundor i denna kategori ännu.</p>
               )}
