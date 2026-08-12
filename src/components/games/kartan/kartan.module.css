@@ -8,14 +8,16 @@
 }
 
 .mapWrap {
+  aspect-ratio: 400 / 760;
   border-radius: 14px;
   overflow: hidden;
   border: 1px solid #232a36;
+  width: 100%;
 }
 
 .mapSvg {
   width: 100%;
-  height: auto;
+  height: 100%;
   display: block;
   background: radial-gradient(circle at 30% 0%, #161c27 0%, #0b0e14 60%);
 }
@@ -165,6 +167,56 @@
 .secondaryButton:hover {
   border-color: #e8b84b;
   color: #e8b84b;
+}
+
+.errorNote {
+  margin-top: 10px;
+  font-size: 13px;
+  color: #e8917a;
+}
+
+/* --- Layout: sida-vid-sida på desktop, staplat på mobil --- */
+
+.gameLayout {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+}
+
+.mapArea {
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+}
+
+@media (min-width: 900px) {
+  .gameLayout {
+    flex-direction: row;
+    align-items: stretch;
+    height: calc(100vh - 260px);
+    min-height: 420px;
+  }
+
+  .sidebar {
+    width: 320px;
+    flex-shrink: 0;
+    justify-content: center;
+  }
+
+  .mapArea {
+    flex: 1;
+    align-items: stretch;
+  }
+
+  .mapArea .mapWrap {
+    height: 100%;
+    width: auto;
+  }
 }
 
 @keyframes pulseGlow {

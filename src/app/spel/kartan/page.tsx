@@ -16,11 +16,11 @@ export default function KartanPage() {
 
   return (
     <main className="min-h-screen bg-[#0b0e14] text-[#f2f0e8]">
-      <div className="mx-auto max-w-3xl px-4 py-10 sm:py-14">
+      <div className="mx-auto max-w-5xl px-4 py-8 sm:py-10">
         <p className="text-[11px] tracking-[0.18em] text-[#8b94a3] mb-2">
           KAN DU ALLA
         </p>
-        <h1 className="text-3xl sm:text-4xl font-semibold mb-6">Kartan</h1>
+        <h1 className="text-2xl sm:text-3xl font-semibold mb-5">Kartan</h1>
 
         <div className="flex gap-2 mb-8">
           <button
@@ -45,13 +45,11 @@ export default function KartanPage() {
           </button>
         </div>
 
-        <div className="max-w-xl mx-auto sm:mx-0">
-          {mode === "lan" ? (
-            <LanKlickGame kategoriId={DEMO_KATEGORI_LAN} spelareId={DEMO_SPELARE_ID} />
-          ) : (
-            <NalgissningGame kategoriId={DEMO_KATEGORI_PUNKT} spelareId={DEMO_SPELARE_ID} />
-          )}
-        </div>
+        {mode === "lan" ? (
+          <LanKlickGame kategoriId={DEMO_KATEGORI_LAN} spelareId={DEMO_SPELARE_ID} />
+        ) : (
+          <NalgissningGame kategoriId={DEMO_KATEGORI_PUNKT} spelareId={DEMO_SPELARE_ID} />
+        )}
       </div>
     </main>
   );

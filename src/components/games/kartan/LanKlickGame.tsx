@@ -12,10 +12,18 @@ interface LanKlickGameProps {
   spelareId: string;
 }
 
+/** Vänder rå Postgres-felmeddelanden till nåt en spelare faktiskt förstår. */
+function friendlyError(message: string): string {
+  if (message.includes("redan gissat")) {
+    return "Du har redan gissat på den här rundan. Skapa en ny testrunda i Supabase för att prova igen.";
+  }
+  return message;
+}
+
 /** Spelmoment 1 — spelaren klickar det län som svarar på frågan. */
 export function LanKlickGame({ kategoriId, spelareId }: LanKlickGameProps) {
   const { runda, loading, error } = useKartanRound(kategoriId);
-  const { submitGuess, submitting } = useSubmitKartanGuess(spelareId);
+  const { submitGuess, submitting, error: guessError } = useSubmitKartanGuess(spelareId);
 
   const [guessId, setGuessId] = useState<string | null>(null);
   const [guessName, setGuessName] = useState<string | null>(null);
@@ -40,44 +48,57 @@ export function LanKlickGame({ kategoriId, spelareId }: LanKlickGameProps) {
   const revealed = resultat !== null;
 
   return (
-    <div>
-      <p className={styles.category}>{runda.titel}</p>
+    <div className={styles.gameLayout}>
+      <div className={styles.sidebar}>
+        <p className={styles.category}>{runda.titel}</p>
 
-      <KartanSvgMap
-        geoSource="sweden-regions"
-        clickMode="region"
-        guessRegionId={guessId}
-        correctRegionId={resultat?.rattPlatsId ?? null}
-        revealed={revealed}
-        onRegionClick={(id, name) => {
-          if (!revealed) {
-            setGuessId(id);
-            setGuessName(name);
-          }
-        }}
-      />
+        {!revealed ? (
+          <>
+            <button
+              className={styles.primaryButton}
+              disabled={!guessId || submitting}
+              onClick={handleVisaSvar}
+            >
+              {guessId ? `Visa svar (gissning: ${guessName})` : "Välj ett län"}
+            </button>
+            {guessError && <p className={styles.errorNote}>{friendlyError(guessError)}</p>}
+          </>
+        ) : (
+          <div className={styles.resultCard}>
+            <p className={styles.resultLabel}>Rätt svar</p>
+            <p className={styles.resultValue}>{resultat?.visadVarde}</p>
+            <p
+              className={
+                resultat?.korrekt
+                  ? `${styles.resultDetail} ${styles.resultDetailGood}`
+                  : styles.resultDetail
+              }
+            >
+              {resultat?.korrekt ? "Helt rätt!" : "Inte riktigt — men nära nog?"}
+            </p>
+            <p className={styles.resultDetail}>Poäng: {resultat?.poang}</p>
+            <button className={styles.secondaryButton} onClick={handleNyRunda}>
+              Ny runda
+            </button>
+          </div>
+        )}
+      </div>
 
-      {!revealed ? (
-        <button
-          className={styles.primaryButton}
-          disabled={!guessId || submitting}
-          onClick={handleVisaSvar}
-        >
-          {guessId ? `Visa svar (gissning: ${guessName})` : "Välj ett län"}
-        </button>
-      ) : (
-        <div className={styles.resultCard}>
-          <p className={styles.resultLabel}>Rätt svar</p>
-          <p className={styles.resultValue}>{resultat?.visadVarde}</p>
-          <p className={resultat?.korrekt ? `${styles.resultDetail} ${styles.resultDetailGood}` : styles.resultDetail}>
-            {resultat?.korrekt ? "Helt rätt!" : "Inte riktigt — men nära nog?"}
-          </p>
-          <p className={styles.resultDetail}>Poäng: {resultat?.poang}</p>
-          <button className={styles.secondaryButton} onClick={handleNyRunda}>
-            Ny runda
-          </button>
-        </div>
-      )}
+      <div className={styles.mapArea}>
+        <KartanSvgMap
+          geoSource="sweden-regions"
+          clickMode="region"
+          guessRegionId={guessId}
+          correctRegionId={resultat?.rattPlatsId ?? null}
+          revealed={revealed}
+          onRegionClick={(id, name) => {
+            if (!revealed) {
+              setGuessId(id);
+              setGuessName(name);
+            }
+          }}
+        />
+      </div>
     </div>
   );
 }

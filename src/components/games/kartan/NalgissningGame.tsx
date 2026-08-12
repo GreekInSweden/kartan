@@ -12,10 +12,17 @@ interface NalgissningGameProps {
   spelareId: string;
 }
 
+function friendlyError(message: string): string {
+  if (message.includes("redan gissat")) {
+    return "Du har redan gissat på den här rundan. Skapa en ny testrunda i Supabase för att prova igen.";
+  }
+  return message;
+}
+
 /** Spelmoment 2 — spelaren droppar en nål var som helst på kartan. Poäng baseras på avstånd. */
 export function NalgissningGame({ kategoriId, spelareId }: NalgissningGameProps) {
   const { runda, loading, error } = useKartanRound(kategoriId);
-  const { submitGuess, submitting } = useSubmitKartanGuess(spelareId);
+  const { submitGuess, submitting, error: guessError } = useSubmitKartanGuess(spelareId);
 
   const [guessPoint, setGuessPoint] = useState<{ lat: number; lon: number } | null>(null);
   const [resultat, setResultat] = useState<KartanGuessResultat | null>(null);
@@ -47,41 +54,48 @@ export function NalgissningGame({ kategoriId, spelareId }: NalgissningGameProps)
       : null;
 
   return (
-    <div>
-      <p className={styles.category}>{runda.titel}</p>
+    <div className={styles.gameLayout}>
+      <div className={styles.sidebar}>
+        <p className={styles.category}>{runda.titel}</p>
 
-      <KartanSvgMap
-        geoSource="sweden-regions"
-        clickMode="point"
-        guessPoint={guessPoint}
-        correctPoint={correctPoint}
-        revealed={revealed}
-        onMapClick={(lat, lon) => {
-          if (!revealed) setGuessPoint({ lat, lon });
-        }}
-      />
+        {!revealed ? (
+          <>
+            <button
+              className={styles.primaryButton}
+              disabled={!guessPoint || submitting}
+              onClick={handleVisaSvar}
+            >
+              {guessPoint ? "Visa svar" : "Placera en nål"}
+            </button>
+            {guessError && <p className={styles.errorNote}>{friendlyError(guessError)}</p>}
+          </>
+        ) : (
+          <div className={styles.resultCard}>
+            <p className={styles.resultLabel}>Rätt svar</p>
+            <p className={styles.resultValue}>{resultat?.visadVarde}</p>
+            <p className={`${styles.resultDetail} ${styles.resultDetailGood}`}>
+              Din gissning låg {Math.round(resultat?.avstandKm ?? 0)} km från rätt plats
+            </p>
+            <p className={styles.resultDetail}>Poäng: {resultat?.poang}</p>
+            <button className={styles.secondaryButton} onClick={handleNyRunda}>
+              Ny runda
+            </button>
+          </div>
+        )}
+      </div>
 
-      {!revealed ? (
-        <button
-          className={styles.primaryButton}
-          disabled={!guessPoint || submitting}
-          onClick={handleVisaSvar}
-        >
-          {guessPoint ? "Visa svar" : "Placera en nål"}
-        </button>
-      ) : (
-        <div className={styles.resultCard}>
-          <p className={styles.resultLabel}>Rätt svar</p>
-          <p className={styles.resultValue}>{resultat?.visadVarde}</p>
-          <p className={`${styles.resultDetail} ${styles.resultDetailGood}`}>
-            Din gissning låg {Math.round(resultat?.avstandKm ?? 0)} km från rätt plats
-          </p>
-          <p className={styles.resultDetail}>Poäng: {resultat?.poang}</p>
-          <button className={styles.secondaryButton} onClick={handleNyRunda}>
-            Ny runda
-          </button>
-        </div>
-      )}
+      <div className={styles.mapArea}>
+        <KartanSvgMap
+          geoSource="sweden-regions"
+          clickMode="point"
+          guessPoint={guessPoint}
+          correctPoint={correctPoint}
+          revealed={revealed}
+          onMapClick={(lat, lon) => {
+            if (!revealed) setGuessPoint({ lat, lon });
+          }}
+        />
+      </div>
     </div>
   );
 }
