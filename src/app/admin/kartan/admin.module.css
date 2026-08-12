@@ -1,0 +1,156 @@
+.page {
+  min-height: 100vh;
+  background: #0b0e14;
+  color: #f2f0e8;
+}
+
+.container {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 40px 16px 80px;
+}
+
+.eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  color: #8b94a3;
+  margin-bottom: 8px;
+}
+
+.title {
+  font-size: 28px;
+  font-weight: 600;
+  margin-bottom: 24px;
+}
+
+.gateBox {
+  background: #12161f;
+  border: 1px solid #232a36;
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 360px;
+}
+
+.input {
+  width: 100%;
+  background: #0e1119;
+  border: 1px solid #232a36;
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: #f2f0e8;
+  font-family: inherit;
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #e8b84b;
+}
+
+.label {
+  font-size: 12px;
+  color: #8b94a3;
+  margin-bottom: 4px;
+  display: block;
+}
+
+.section {
+  background: #12161f;
+  border: 1px solid #232a36;
+  border-radius: 12px;
+  padding: 22px;
+  margin-bottom: 24px;
+}
+
+.sectionTitle {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.button {
+  padding: 10px 18px;
+  border-radius: 8px;
+  border: none;
+  background: #e8b84b;
+  color: #0b0e14;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.button:hover:not(:disabled) {
+  background: #f0c667;
+}
+
+.button:disabled {
+  background: #232a36;
+  color: #5a6270;
+  cursor: not-allowed;
+}
+
+.selectTypeRow {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.typeButton {
+  flex: 1;
+  padding: 8px 0;
+  border-radius: 8px;
+  border: 1px solid #232a36;
+  background: transparent;
+  color: #8b94a3;
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.typeButtonActive {
+  border-color: #e8b84b;
+  background: #e8b84b1a;
+  color: #e8b84b;
+}
+
+.listItem {
+  padding: 10px 0;
+  border-bottom: 1px solid #1c222c;
+  font-size: 13px;
+  color: #c9cfda;
+}
+
+.listItem:last-child {
+  border-bottom: none;
+}
+
+.listItemMeta {
+  color: #5a6270;
+  font-size: 12px;
+}
+
+.pickerHint {
+  font-size: 12px;
+  color: #8b94a3;
+  margin-bottom: 10px;
+}
+
+.pickedValue {
+  font-size: 13px;
+  color: #e8b84b;
+  margin-bottom: 10px;
+}
+
+.errorNote {
+  color: #e8917a;
+  font-size: 13px;
+  margin-top: 8px;
+}
+
+.successNote {
+  color: #7fc8a0;
+  font-size: 13px;
+  margin-top: 8px;
+}

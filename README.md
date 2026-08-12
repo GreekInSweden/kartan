@@ -7,6 +7,40 @@ kör SQL-filerna i `supabase/sql/` i din Supabase-databas, och kör `npm run dev
 committas ALDRIG till GitHub (skyddad av `.gitignore`). Om du klonar ner detta
 på en annan dator måste du skapa `.env.local` där igen manuellt.
 
+## Admin-gränssnitt (`/admin/kartan`)
+
+Ett lösenordsskyddat gränssnitt för att skapa kategorier och rundor genom att
+klicka direkt på kartan istället för att skriva SQL för hand.
+
+**Krävs innan det fungerar — två nya miljövariabler:**
+
+1. **`SUPABASE_SECRET_KEY`** — hämta från Supabase Dashboard →
+   Project Settings → API Keys → fliken "Secret keys" (eller den äldre
+   `service_role`-nyckeln om projektet inte migrerat till de nya nyckeltyperna
+   än). Denna nyckel kringgår alla säkerhetsregler (RLS) med flit, så att
+   admin-sidan kan skriva till databasen — den får ALDRIG hamna i kod som
+   skickas till webbläsaren.
+2. **`ADMIN_PASSWORD`** — ett lösenord du själv väljer, för att låsa upp
+   `/admin/kartan`.
+
+Lägg båda i `.env.local` lokalt (platshållare finns redan, byt bara ut
+värdena) **och** som miljövariabler på Vercel under Settings → Environment
+Variables. Notera att INGEN av dem har `NEXT_PUBLIC_`-prefix — de ska bara
+vara tillgängliga server-side.
+
+**Så funkar det:** admin-sidan är en vanlig klientkomponent med ett
+lösenordsfält. Skapande av kategorier/rundor går via två API-routes
+(`/api/admin/kartan/kategorier` och `/api/admin/kartan/rundor`) som kollar
+lösenordet server-side och sedan skriver till databasen med den hemliga
+nyckeln. Detta är en pragmatisk lösning för en ensam admin i det här
+stadiet — inte ett fullständigt inloggningssystem med roller. Om ni senare
+vill ha flera admins eller koppla till KanDuAlla:s befintliga
+semi-admin/full-admin-roller är det ett separat, större steg.
+
+Vid skapande av en ny runda inaktiveras automatiskt eventuella tidigare
+aktiva rundor i samma kategori, så det alltid bara finns en aktiv runda
+per kategori — matchar hur `/spel/kartan` hämtar data.
+
 ---
 
 # Kartan — nästa steg efter prototypen
