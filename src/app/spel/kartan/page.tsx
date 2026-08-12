@@ -8,8 +8,8 @@ import { NalgissningGame } from "@/components/games/kartan/NalgissningGame";
 const DEMO_SPELARE_ID = "00000000-0000-0000-0000-000000000000";
 
 // TODO: byt ut mot riktiga kategori-id:n från kartan_kategorier när ni seedat innehåll
-const DEMO_KATEGORI_LAN = "REPLACE_WITH_REAL_KATEGORI_ID";
-const DEMO_KATEGORI_PUNKT = "REPLACE_WITH_REAL_KATEGORI_ID";
+const DEMO_KATEGORI_LAN = "f2adc7b0-0983-4641-9641-55a796586f53";
+const DEMO_KATEGORI_PUNKT = "184b26e5-dd6f-4153-a6c3-6e4cf520526c";
 
 export default function KartanPage() {
   const [mode, setMode] = useState<"lan" | "punkt">("lan");
