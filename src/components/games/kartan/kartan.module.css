@@ -1,0 +1,102 @@
+/* Kartan — design tokens delade med prototypen (split-flap/night-map känsla) */
+
+.category {
+  font-size: 15px;
+  color: #f2f0e8;
+  margin-bottom: 10px;
+}
+
+.mapSvg {
+  width: 100%;
+  height: auto;
+  display: block;
+  background: radial-gradient(circle at 30% 0%, #161c27 0%, #0b0e14 60%);
+}
+
+.mapLoading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #8b94a3;
+  font-size: 13px;
+  background: #0e1119;
+  border-radius: 12px;
+}
+
+.zoomGroup {
+  transition: transform 1100ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.region {
+  fill: #1e2a38;
+  stroke: #232a36;
+  stroke-width: 0.6;
+  transition: fill 300ms ease, opacity 500ms ease;
+  cursor: pointer;
+}
+
+.region:hover {
+  fill: #2a3a4d;
+}
+
+.regionGuess {
+  fill: #4fa8d8;
+  stroke: #4fa8d8;
+  stroke-width: 1.2;
+}
+
+.regionCorrect {
+  fill: #e8b84b;
+  animation: pulseGlow 1.6s ease-in-out infinite;
+}
+
+.regionDimmed {
+  fill: #161c27;
+  opacity: 0.35;
+  cursor: default;
+}
+
+.guessDot {
+  fill: #4fa8d8;
+  stroke: #0e1119;
+  stroke-width: 1.5;
+}
+
+.correctDot {
+  fill: #e8b84b;
+  animation: pulseGlow 1.6s ease-in-out infinite;
+}
+
+.pingRing {
+  fill: none;
+  stroke: #e8b84b;
+  stroke-width: 1.5;
+  animation: ping 1.4s ease-out infinite;
+}
+
+.distanceLine {
+  stroke: #8b94a3;
+  stroke-width: 0.8;
+  stroke-dasharray: 3 3;
+}
+
+@keyframes pulseGlow {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 3px #e8b84b) drop-shadow(0 0 0px #e8b84b);
+  }
+  50% {
+    filter: drop-shadow(0 0 14px #e8b84b) drop-shadow(0 0 26px #e8b84bcc);
+  }
+}
+
+@keyframes ping {
+  0% {
+    r: 3;
+    opacity: 0.9;
+  }
+  100% {
+    r: 34;
+    opacity: 0;
+  }
+}
