@@ -97,6 +97,9 @@ export function PaketSpel({ paketId, paketNamn, spelareId, onKlar }: PaketSpelPr
           />
         </div>
 
+        <p className={`${styles.modeBadge} ${fraga.typ === "punkt" ? styles.modeBadgePunkt : styles.modeBadgeKommun}`}>
+          {fraga.typ === "punkt" ? "NÅLGISSNING" : "KOMMUN"}
+        </p>
         <p className={styles.category}>{fraga.titel}</p>
 
         {!revealed ? (
@@ -149,6 +152,7 @@ export function PaketSpel({ paketId, paketNamn, spelareId, onKlar }: PaketSpelPr
         <KartanSvgMap
           geoSource={geoSource}
           clickMode={fraga.typ === "punkt" ? "point" : "region"}
+          modeHint={fraga.typ === "punkt" ? "punkt" : "kommun"}
           guessRegionId={guessId}
           guessPoint={guessPoint}
           correctRegionId={resultat?.rattPlatsId ?? null}

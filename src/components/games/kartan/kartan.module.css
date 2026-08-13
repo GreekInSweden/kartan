@@ -177,6 +177,39 @@
   color: #e8b84b;
 }
 
+/* --- Lägesindikator: skiljer visuellt på kommun-klick och nålgissning --- */
+
+.modeBadge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  padding: 3px 9px;
+  border-radius: 999px;
+  margin-bottom: 8px;
+  border: 1px solid transparent;
+}
+
+.modeBadgeKommun {
+  color: #c3a6f0;
+  background: #a78bda1a;
+  border-color: #a78bda55;
+}
+
+.modeBadgePunkt {
+  color: #7cc4ed;
+  background: #4fa8d81a;
+  border-color: #4fa8d855;
+}
+
+.mapWrapKommun {
+  border-color: #a78bda55;
+}
+
+.mapWrapPunkt {
+  border-color: #4fa8d855;
+}
+
 .secondaryButton {
   margin-top: 16px;
   background: none;

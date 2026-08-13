@@ -27,6 +27,8 @@ interface KartanSvgMapProps {
   revealed: boolean;
   onRegionClick?: (id: string, name: string) => void;
   onMapClick?: (lat: number, lon: number, pixel: { x: number; y: number }) => void;
+  /** Valfri: tonar kartans kantfärg för att visuellt skilja kommun- och nålgissningsfrågor åt. */
+  modeHint?: "kommun" | "punkt";
 }
 
 interface PanZoom {
@@ -36,6 +38,21 @@ interface PanZoom {
 }
 
 const IDENTITY: PanZoom = { x: 0, y: 0, scale: 1 };
+
+/** Håller position/scale inom rimliga gränser — kan aldrig "rymma iväg" till extrema tal. */
+function clampPanZoom(pz: PanZoom): PanZoom {
+  const scale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, pz.scale));
+  // Tillåt en del överpanorering, men aldrig så mycket att kartan helt lämnar vyn.
+  const maxX = VIEWPORT_W * 0.6;
+  const minX = -(VIEWPORT_W * scale - VIEWPORT_W * 0.4);
+  const maxY = VIEWPORT_H * 0.6;
+  const minY = -(VIEWPORT_H * scale - VIEWPORT_H * 0.4);
+  return {
+    scale,
+    x: Number.isFinite(pz.x) ? Math.min(maxX, Math.max(minX, pz.x)) : 0,
+    y: Number.isFinite(pz.y) ? Math.min(maxY, Math.max(minY, pz.y)) : 0,
+  };
+}
 
 export function KartanSvgMap({
   geoSource,
@@ -47,25 +64,28 @@ export function KartanSvgMap({
   revealed,
   onRegionClick,
   onMapClick,
+  modeHint,
 }: KartanSvgMapProps) {
   const [geoData, setGeoData] = useState<FeatureCollection | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 
-  // --- Manuell pan/zoom (scroll, drag, tvåfingers-pinch) ---
+  // --- Manuell pan/zoom, byggd ENBART på Pointer Events ---
+  // (mus, touch och penna via samma API — inga separata touch-handlers,
+  // vilket tidigare orsakade en krasch när båda systemen triggade samtidigt).
   const [panZoom, setPanZoom] = useState<PanZoom>(IDENTITY);
-  const dragState = useRef<{ startX: number; startY: number; origX: number; origY: number } | null>(null);
-  const pinchState = useRef<{ startDist: number; origScale: number; midSvgX: number; midSvgY: number } | null>(
-    null
-  );
+  const activePointers = useRef<Map<number, { x: number; y: number }>>(new Map());
+  const lastPinchDist = useRef<number | null>(null);
+  const isDraggingRef = useRef(false);
   const draggedRef = useRef(false);
   const [hoveredName, setHoveredName] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
-  // Nollställ pan/zoom när en ny fråga börjar (revealed går från true -> false,
-  // eller komponenten just monterats för första gången).
   const prevRevealed = useRef(revealed);
   useEffect(() => {
     if (prevRevealed.current && !revealed) {
       setPanZoom(IDENTITY);
+      activePointers.current.clear();
+      lastPinchDist.current = null;
     }
     prevRevealed.current = revealed;
   }, [revealed]);
@@ -88,7 +108,9 @@ export function KartanSvgMap({
   }, [geoData]);
 
   const clientToSvg = useCallback((clientX: number, clientY: number) => {
-    const rect = svgRef.current!.getBoundingClientRect();
+    if (!svgRef.current) return { x: 0, y: 0 };
+    const rect = svgRef.current.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return { x: 0, y: 0 };
     return {
       x: ((clientX - rect.left) / rect.width) * VIEWPORT_W,
       y: ((clientY - rect.top) / rect.height) * VIEWPORT_H,
@@ -105,7 +127,7 @@ export function KartanSvgMap({
         const newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, pz.scale * factor));
         const dataX = (svgX - pz.x) / pz.scale;
         const dataY = (svgY - pz.y) / pz.scale;
-        return { scale: newScale, x: svgX - dataX * newScale, y: svgY - dataY * newScale };
+        return clampPanZoom({ scale: newScale, x: svgX - dataX * newScale, y: svgY - dataY * newScale });
       });
     },
     [revealed, clientToSvg]
@@ -114,61 +136,67 @@ export function KartanSvgMap({
   const handlePointerDown = useCallback(
     (e: React.PointerEvent<SVGSVGElement>) => {
       if (revealed) return;
-      draggedRef.current = false;
-      dragState.current = { startX: e.clientX, startY: e.clientY, origX: panZoom.x, origY: panZoom.y };
       (e.target as Element).setPointerCapture?.(e.pointerId);
+      activePointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      draggedRef.current = false;
+      if (activePointers.current.size === 1) {
+        isDraggingRef.current = true;
+        setIsDragging(true);
+      } else {
+        // En andra pekare tillkom -> vi går in i pinch-läge, inte drag-läge.
+        isDraggingRef.current = false;
+        setIsDragging(false);
+        const pts = Array.from(activePointers.current.values());
+        lastPinchDist.current = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+      }
     },
-    [revealed, panZoom.x, panZoom.y]
+    [revealed]
   );
 
   const handlePointerMove = useCallback(
     (e: React.PointerEvent<SVGSVGElement>) => {
-      if (!dragState.current || !svgRef.current) return;
-      const rect = svgRef.current.getBoundingClientRect();
-      const dx = ((e.clientX - dragState.current.startX) / rect.width) * VIEWPORT_W;
-      const dy = ((e.clientY - dragState.current.startY) / rect.height) * VIEWPORT_H;
-      if (Math.abs(dx) > 2 || Math.abs(dy) > 2) draggedRef.current = true;
-      setPanZoom((pz) => ({ ...pz, x: dragState.current!.origX + dx, y: dragState.current!.origY + dy }));
+      if (!activePointers.current.has(e.pointerId)) return;
+      const prev = activePointers.current.get(e.pointerId)!;
+      activePointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+      if (activePointers.current.size === 1 && isDraggingRef.current && svgRef.current) {
+        const rect = svgRef.current.getBoundingClientRect();
+        if (rect.width === 0 || rect.height === 0) return;
+        const dx = ((e.clientX - prev.x) / rect.width) * VIEWPORT_W;
+        const dy = ((e.clientY - prev.y) / rect.height) * VIEWPORT_H;
+        if (Math.abs(e.clientX - prev.x) > 2 || Math.abs(e.clientY - prev.y) > 2) draggedRef.current = true;
+        setPanZoom((pz) => clampPanZoom({ ...pz, x: pz.x + dx, y: pz.y + dy }));
+        return;
+      }
+
+      if (activePointers.current.size === 2 && lastPinchDist.current !== null) {
+        const pts = Array.from(activePointers.current.values());
+        const dist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+        const midClientX = (pts[0].x + pts[1].x) / 2;
+        const midClientY = (pts[0].y + pts[1].y) / 2;
+        const { x: midSvgX, y: midSvgY } = clientToSvg(midClientX, midClientY);
+        const ratio = dist / (lastPinchDist.current || dist);
+        draggedRef.current = true;
+
+        setPanZoom((pz) => {
+          const newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, pz.scale * ratio));
+          const dataX = (midSvgX - pz.x) / pz.scale;
+          const dataY = (midSvgY - pz.y) / pz.scale;
+          return clampPanZoom({ scale: newScale, x: midSvgX - dataX * newScale, y: midSvgY - dataY * newScale });
+        });
+        lastPinchDist.current = dist;
+      }
     },
-    []
+    [clientToSvg]
   );
 
-  const handlePointerUp = useCallback(() => {
-    dragState.current = null;
-  }, []);
-
-  // --- Tvåfingers-pinch (touch) ---
-  const handleTouchStart = useCallback(
-    (e: React.TouchEvent<SVGSVGElement>) => {
-      if (revealed || e.touches.length !== 2) return;
-      const [t1, t2] = [e.touches[0], e.touches[1]];
-      const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
-      const mid = clientToSvg((t1.clientX + t2.clientX) / 2, (t1.clientY + t2.clientY) / 2);
-      pinchState.current = { startDist: dist, origScale: panZoom.scale, midSvgX: mid.x, midSvgY: mid.y };
-    },
-    [revealed, panZoom.scale, clientToSvg]
-  );
-
-  const handleTouchMove = useCallback(
-    (e: React.TouchEvent<SVGSVGElement>) => {
-      if (!pinchState.current || e.touches.length !== 2) return;
-      e.preventDefault();
-      const [t1, t2] = [e.touches[0], e.touches[1]];
-      const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
-      const ratio = dist / pinchState.current.startDist;
-      setPanZoom((pz) => {
-        const newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, pinchState.current!.origScale * ratio));
-        const { midSvgX, midSvgY } = pinchState.current!;
-        const dataX = (midSvgX - pz.x) / pz.scale;
-        const dataY = (midSvgY - pz.y) / pz.scale;
-        return { scale: newScale, x: midSvgX - dataX * newScale, y: midSvgY - dataY * newScale };
-      });
-    },
-    []
-  );
-
-  const handleTouchEnd = useCallback((e: React.TouchEvent<SVGSVGElement>) => {
-    if (e.touches.length < 2) pinchState.current = null;
+  const endPointer = useCallback((e: React.PointerEvent<SVGSVGElement>) => {
+    activePointers.current.delete(e.pointerId);
+    if (activePointers.current.size < 2) lastPinchDist.current = null;
+    if (activePointers.current.size === 0) {
+      isDraggingRef.current = false;
+      setIsDragging(false);
+    }
   }, []);
 
   if (!geoData || !projection || !path) {
@@ -200,24 +228,28 @@ export function KartanSvgMap({
       : { transform: "scale(1)" };
 
   function handleSvgClick(e: React.MouseEvent<SVGSVGElement>) {
-    if (draggedRef.current) return; // en drag ska inte räknas som klick
+    if (draggedRef.current) return; // en drag/pinch ska inte räknas som klick
     if (clickMode !== "point" || revealed || !onMapClick || !svgRef.current) return;
     const rect = svgRef.current.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return;
     const svgX = ((e.clientX - rect.left) / rect.width) * VIEWPORT_W;
     const svgY = ((e.clientY - rect.top) / rect.height) * VIEWPORT_H;
     const px = (svgX - panZoom.x) / panZoom.scale;
     const py = (svgY - panZoom.y) / panZoom.scale;
     const inverted = proj.invert?.([px, py]);
-    if (!inverted) return;
+    if (!inverted || !Number.isFinite(inverted[0]) || !Number.isFinite(inverted[1])) return;
     const [lon, lat] = inverted;
     onMapClick(lat, lon, { x: px, y: py });
   }
 
   return (
-    <div className={styles.mapWrap} style={{ position: "relative" }}>
-      {hoveredName && !revealed && (
-        <div className={styles.hoverBadge}>{hoveredName}</div>
-      )}
+    <div
+      className={`${styles.mapWrap} ${
+        modeHint === "kommun" ? styles.mapWrapKommun : modeHint === "punkt" ? styles.mapWrapPunkt : ""
+      }`}
+      style={{ position: "relative" }}
+    >
+      {hoveredName && !revealed && <div className={styles.hoverBadge}>{hoveredName}</div>}
       <svg
         ref={svgRef}
         viewBox={`0 0 ${VIEWPORT_W} ${VIEWPORT_H}`}
@@ -226,13 +258,11 @@ export function KartanSvgMap({
         onWheel={handleWheel}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerLeave={handlePointerUp}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
+        onPointerUp={endPointer}
+        onPointerCancel={endPointer}
+        onPointerLeave={endPointer}
         style={{
-          cursor: revealed ? "default" : dragState.current ? "grabbing" : clickMode === "point" ? "crosshair" : "grab",
+          cursor: revealed ? "default" : isDragging ? "grabbing" : clickMode === "point" ? "crosshair" : "grab",
           touchAction: "none",
         }}
       >
