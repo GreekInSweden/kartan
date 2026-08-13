@@ -55,6 +55,18 @@ export interface KartanGuessResultat {
   visadVarde: string;
 }
 
+export interface KartanPaketSummering {
+  id: string;
+  namn: string;
+}
+
+export interface KartanPaketFraga {
+  rundaId: string;
+  titel: string;
+  typ: KartanSpeltyp;
+  ordning: number;
+}
+
 export interface GeoJsonRegionProps {
   id: string;
   name: string;

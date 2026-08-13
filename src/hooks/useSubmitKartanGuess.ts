@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import type { KartanGuess, KartanGuessResultat } from "@/types/kartan";
 
 interface UseSubmitKartanGuessResult {
-  submitGuess: (guess: KartanGuess) => Promise<KartanGuessResultat | null>;
+  submitGuess: (guess: KartanGuess, paketId?: string) => Promise<KartanGuessResultat | null>;
   submitting: boolean;
   error: string | null;
 }
@@ -20,7 +20,7 @@ export function useSubmitKartanGuess(spelareId: string): UseSubmitKartanGuessRes
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function submitGuess(guess: KartanGuess): Promise<KartanGuessResultat | null> {
+  async function submitGuess(guess: KartanGuess, paketId?: string): Promise<KartanGuessResultat | null> {
     setSubmitting(true);
     setError(null);
     const supabase = createClient();
@@ -31,6 +31,7 @@ export function useSubmitKartanGuess(spelareId: string): UseSubmitKartanGuessRes
       p_plats_id: guess.typ === "lan" || guess.typ === "kommun" ? guess.platsId : null,
       p_guess_lat: guess.typ === "punkt" ? guess.lat : null,
       p_guess_lon: guess.typ === "punkt" ? guess.lon : null,
+      p_paket_id: paketId ?? null,
     });
 
     setSubmitting(false);

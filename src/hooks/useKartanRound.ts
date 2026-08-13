@@ -38,7 +38,7 @@ export function useKartanRound(typ: KartanSpeltyp, refreshKey: number = 0): UseK
       setError(null);
 
       const { data, error: dbError } = await supabase
-        .from("kartan_rundor")
+        .from("kartan_rundor_public")
         .select("id, kategori_id, titel, typ")
         .eq("typ", typ)
         .eq("is_aktiv", true);
