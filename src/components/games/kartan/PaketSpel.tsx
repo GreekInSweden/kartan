@@ -32,7 +32,7 @@ export function PaketSpel({ paketId, paketNamn, spelareId, onKlar }: PaketSpelPr
   const klar = index >= fragor.length;
 
   if (klar) {
-    const maxPoang = fragor.length * 1000;
+    const maxPoang = fragor.length * 5000;
     return (
       <div className={styles.resultCard} style={{ maxWidth: 400 }}>
         <p className={styles.resultLabel}>{paketNamn} — klart!</p>
