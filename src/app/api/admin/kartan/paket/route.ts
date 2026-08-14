@@ -12,7 +12,13 @@ function shuffle<T>(arr: T[]): T[] {
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { adminPassword, namn, antalKommun = 5, antalPunkt = 5 } = body;
+  const {
+    adminPassword,
+    namn,
+    antalKommun = 5,
+    antalPunkt = 5,
+    kategoriIds, // valfri: string[] — om satt hämtas ENDAST från dessa kategorier (temapaket)
+  } = body;
 
   if (!checkAdminPassword(adminPassword)) {
     return NextResponse.json({ error: "Fel lösenord." }, { status: 401 });
@@ -29,12 +35,12 @@ export async function POST(request: NextRequest) {
   if (usedError) return NextResponse.json({ error: usedError.message }, { status: 500 });
   const uteslut = (redanAnvanda ?? []).map((r) => r.runda_id);
 
+  const temaFilter = Array.isArray(kategoriIds) && kategoriIds.length > 0 ? kategoriIds : null;
+
   async function plockaSlumpade(typ: "kommun" | "punkt", antal: number) {
-    let query = supabase
-      .from("kartan_rundor")
-      .select("id")
-      .eq("typ", typ)
-      .eq("is_aktiv", true);
+    if (antal <= 0) return [];
+    let query = supabase.from("kartan_rundor").select("id").eq("typ", typ).eq("is_aktiv", true);
+    if (temaFilter) query = query.in("kategori_id", temaFilter);
     if (uteslut.length > 0) {
       query = query.not("id", "in", `(${uteslut.join(",")})`);
     }

@@ -100,6 +100,7 @@ export default function AdminKartanPage() {
           paket={paket}
           paketRundor={paketRundor}
           rundorById={rundorById}
+          kategorier={kategorier}
           oppetPaketId={oppetPaketId}
           setOppetPaketId={setOppetPaketId}
           testandeId={testandeId}
@@ -180,6 +181,7 @@ function PaketSektion({
   paket,
   paketRundor,
   rundorById,
+  kategorier,
   oppetPaketId,
   setOppetPaketId,
   testandeId,
@@ -190,29 +192,55 @@ function PaketSektion({
   paket: PaketItem[];
   paketRundor: PaketRundaLank[];
   rundorById: Record<string, RundaListItem>;
+  kategorier: KartanKategori[];
   oppetPaketId: string | null;
   setOppetPaketId: (id: string | null) => void;
   testandeId: string | null;
   setTestandeId: (id: string | null) => void;
   onChanged: () => void;
 }) {
+  const [lage, setLage] = useState<"blandat" | "tema">("blandat");
+  const [namn, setNamn] = useState("");
+  const [valdaKategorier, setValdaKategorier] = useState<Set<string>>(new Set());
+  const [antalKommun, setAntalKommun] = useState(5);
+  const [antalPunkt, setAntalPunkt] = useState(5);
   const [skapar, setSkapar] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  function toggleKategori(id: string) {
+    setValdaKategorier((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
 
   async function skapaPaket() {
     setSkapar(true);
     setError(null);
     try {
+      const body: Record<string, unknown> = { adminPassword, antalKommun, antalPunkt };
+      if (namn) body.namn = namn;
+      if (lage === "tema") {
+        if (valdaKategorier.size === 0) {
+          setError("Välj minst en kategori för temapaketet.");
+          return;
+        }
+        body.kategoriIds = Array.from(valdaKategorier);
+      }
       const res = await fetch("/api/admin/kartan/paket", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ adminPassword }),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       if (!res.ok) {
         setError(data.error ?? "Något gick fel.");
         return;
       }
+      setNamn("");
+      setValdaKategorier(new Set());
       onChanged();
     } finally {
       setSkapar(false);
@@ -232,13 +260,83 @@ function PaketSektion({
   return (
     <div className={styles.section}>
       <p className={styles.sectionTitle}>Paket</p>
-      <p className={styles.pickerHint}>
-        Ett paket har 10 frågor (5 kommun + 5 nålgissning), slumpade ur oanvända rundor. Publicera ett
-        paket för att göra det synligt på spelarsidan.
-      </p>
+
+      <div className={styles.selectTypeRow}>
+        <button
+          className={`${styles.typeButton} ${lage === "blandat" ? styles.typeButtonActive : ""}`}
+          onClick={() => setLage("blandat")}
+        >
+          Slumpat blandpaket
+        </button>
+        <button
+          className={`${styles.typeButton} ${lage === "tema" ? styles.typeButtonActive : ""}`}
+          onClick={() => setLage("tema")}
+        >
+          Temapaket
+        </button>
+      </div>
+
+      {lage === "blandat" ? (
+        <p className={styles.pickerHint}>
+          Slumpar {antalKommun} kommun + {antalPunkt} nålgissning ur HELA den oanvända poolen.
+        </p>
+      ) : (
+        <>
+          <p className={styles.pickerHint}>
+            Kryssa i vilka kategorier som ska utgöra paketet (t.ex. bara Stockholm-kategorier) — bara
+            rundor från dessa kategorier plockas ur.
+          </p>
+          <div style={{ maxHeight: 180, overflowY: "auto", marginBottom: 12 }}>
+            {kategorier.map((k) => (
+              <label
+                key={k.id}
+                style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 0", fontSize: 13, color: "#c9cfda", cursor: "pointer" }}
+              >
+                <input
+                  type="checkbox"
+                  checked={valdaKategorier.has(k.id)}
+                  onChange={() => toggleKategori(k.id)}
+                />
+                {k.namn} <span className={styles.listItemMeta}>({k.typ})</span>
+              </label>
+            ))}
+          </div>
+        </>
+      )}
+
+      <label className={styles.label}>Paketnamn (valfritt)</label>
+      <input
+        className={styles.input}
+        value={namn}
+        onChange={(e) => setNamn(e.target.value)}
+        placeholder="T.ex. Stockholm — landmärken"
+      />
+
+      <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
+        <div>
+          <label className={styles.label}>Antal kommun-frågor</label>
+          <input
+            type="number"
+            className={styles.input}
+            value={antalKommun}
+            onChange={(e) => setAntalKommun(Number(e.target.value))}
+            min={0}
+          />
+        </div>
+        <div>
+          <label className={styles.label}>Antal nålgissningar</label>
+          <input
+            type="number"
+            className={styles.input}
+            value={antalPunkt}
+            onChange={(e) => setAntalPunkt(Number(e.target.value))}
+            min={0}
+          />
+        </div>
+      </div>
 
       <button className={styles.button} disabled={skapar} onClick={skapaPaket}>
-        {skapar ? "Skapar…" : "Skapa nytt paket"}
+        {skapar ? "Skapar…" : lage === "tema" ? "Skapa temapaket" : "Skapa nytt paket"}
       </button>
       {error && <p className={styles.errorNote}>{error}</p>}
 
