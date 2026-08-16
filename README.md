@@ -1,125 +1,103 @@
-# Kartan
+# Ranglistan
 
-Ett komplett, körbart Next.js-projekt. Klona/pusha till GitHub, kör `npm install`,
-kör SQL-filerna i `supabase/sql/` i din Supabase-databas, och kör `npm run dev`.
+Ett flerspelsspel där man skriver namn och gissar hela ranglistor — lag, städer,
+floder, presidenter osv. Byggt med Next.js + Supabase (inloggning + databas),
+tänkt att köras på Vercel.
 
-`.env.local` finns redan ifylld med din Supabase-URL och anon-nyckel — den
-committas ALDRIG till GitHub (skyddad av `.gitignore`). Om du klonar ner detta
-på en annan dator måste du skapa `.env.local` där igen manuellt.
-
-## Admin-gränssnitt (`/admin/kartan`)
-
-Ett lösenordsskyddat gränssnitt för att skapa kategorier och rundor genom att
-klicka direkt på kartan istället för att skriva SQL för hand.
-
-**Krävs innan det fungerar — två nya miljövariabler:**
-
-1. **`SUPABASE_SECRET_KEY`** — hämta från Supabase Dashboard →
-   Project Settings → API Keys → fliken "Secret keys" (eller den äldre
-   `service_role`-nyckeln om projektet inte migrerat till de nya nyckeltyperna
-   än). Denna nyckel kringgår alla säkerhetsregler (RLS) med flit, så att
-   admin-sidan kan skriva till databasen — den får ALDRIG hamna i kod som
-   skickas till webbläsaren.
-2. **`ADMIN_PASSWORD`** — ett lösenord du själv väljer, för att låsa upp
-   `/admin/kartan`.
-
-Lägg båda i `.env.local` lokalt (platshållare finns redan, byt bara ut
-värdena) **och** som miljövariabler på Vercel under Settings → Environment
-Variables. Notera att INGEN av dem har `NEXT_PUBLIC_`-prefix — de ska bara
-vara tillgängliga server-side.
-
-**Så funkar det:** admin-sidan är en vanlig klientkomponent med ett
-lösenordsfält. Skapande av kategorier/rundor går via två API-routes
-(`/api/admin/kartan/kategorier` och `/api/admin/kartan/rundor`) som kollar
-lösenordet server-side och sedan skriver till databasen med den hemliga
-nyckeln. Detta är en pragmatisk lösning för en ensam admin i det här
-stadiet — inte ett fullständigt inloggningssystem med roller. Om ni senare
-vill ha flera admins eller koppla till KanDuAlla:s befintliga
-semi-admin/full-admin-roller är det ett separat, större steg.
-
-Vid skapande av en ny runda inaktiveras automatiskt eventuella tidigare
-aktiva rundor i samma kategori, så det alltid bara finns en aktiv runda
-per kategori — matchar hur `/spel/kartan` hämtar data.
+Just nu ingår 8 färdiga listor i fyra kategorier (Sport, Geografi, Historia,
+Övrigt). Fler listor läggs till genom att bara skriva mer SQL i `supabase/seed.sql`
+— ingen kodändring krävs.
 
 ---
 
-# Kartan — nästa steg efter prototypen
+## 1. Skapa Supabase-projektet
 
-Det här är riktig kod i er Next.js/TypeScript-struktur, med **riktig svensk geodata**
-(inte schematisk som i klick-prototypen). Redo att kopieras in i era projekt-repo.
+1. Gå till [supabase.com](https://supabase.com) och skapa ett konto/logga in.
+2. Klicka **New project**. Välj namn, lösenord för databasen och region (t.ex.
+   Frankfurt/Stockholm om det finns).
+3. Vänta tills projektet är klart (tar ca 1–2 minuter).
+4. Gå till **SQL Editor** i vänstermenyn → **New query**.
+   - Klistra in hela innehållet i `supabase/schema.sql` → **Run**.
+   - Ny query, klistra in hela `supabase/seed.sql` → **Run**.
+5. Gå till **Authentication → Providers → Email** och slå **av**
+   "Confirm email". Vi använder påhittade e-postadresser internt
+   (baserat på användarnamn) som aldrig kan ta emot riktiga mejl, så
+   bekräftelse måste vara avstängd annars kan ingen logga in direkt.
+6. Gå till **Project Settings → API**. Notera:
+   - **Project URL**
+   - **anon public key**
 
-## Vad är med
+   Dessa behövs i steg 3.
 
-```
-public/data/kartan/
-  sweden-regions.geojson         21 län, förenklade (~23 KB)
-  sweden-municipalities.geojson  290 kommuner, förenklade (~300 KB)
-  region-centroids.json          {id: {namn, lat, lon}} för alla län
-  municipality-centroids.json    samma för alla kommuner (inkl. lan_code)
+---
 
-src/types/kartan.ts              Delade TS-typer
-src/lib/kartan/geo.ts            d3-geo-projektion + haversine-avstånd + poängmodell
-src/components/games/kartan/
-  KartanSvgMap.tsx                Kartrenderaren (delas av båda spelmomenten)
-  LanKlickGame.tsx                 Spelmoment 1: klicka rätt län
-  NalgissningGame.tsx              Spelmoment 2: droppa en nål, poäng efter avstånd
-  kartan.module.css                Zoom+glow-avslöjandet, samma känsla som prototypen
-src/hooks/
-  useKartanRound.ts                Hämtar aktiv runda (INTE facit)
-  useSubmitKartanGuess.ts          Anropar RPC:en, får facit + poäng tillbaka
-src/app/spel/kartan/page.tsx     Exempel-sida som kopplar ihop allt
+## 2. Lägg upp koden på GitHub
 
-supabase/sql/
-  001_kartan_schema.sql          Tabeller, RLS, submit_kartan_guess-RPC
-  002_seed_lan.sql               INSERT för alla 21 län (riktiga koordinater)
-  003_seed_kommuner.sql          INSERT för alla 290 kommuner (för framtida kommun-läge)
+```bash
+cd ranglistan-app
+git init
+git add .
+git commit -m "Första versionen av Ranglistan"
 ```
 
-## Var kommer geodatan ifrån?
+Skapa ett nytt, tomt repo på [github.com/new](https://github.com/new) (utan
+README/gitignore), följ sedan instruktionerna GitHub visar för att pusha ett
+befintligt repo, t.ex.:
 
-`okfse/sweden-geojson` (MIT, öppen data ursprungligen från Valmyndigheten /
-SCB-liknande källor). Jag har kört den genom `shapely`:
-- **simplify()** för att hålla filstorleken nere (23 KB / 300 KB istället för flera MB)
-- **representative_point()** istället för geometrisk centroid, så att punkten
-  garanterat hamnar inuti länet/kommunen (viktigt för zoom-targeting vid avslöjande)
+```bash
+git remote add origin https://github.com/DITT-ANVANDARNAMN/ranglistan.git
+git branch -M main
+git push -u origin main
+```
 
-Förenklingen är inte topologimedveten — gränser mellan grannregioner kan ha
-mikroskopiska glapp. Fullt okej för visualisering, men inte för areaberäkningar.
+---
 
-## Säkerhetsmönstret — samma som Spelkväll/KanDuAlla
+## 3. Deploya på Vercel
 
-Precis som `record_score`-RPC:en i Spelkväll och `/api/game/guess` i KanDuAlla:
-**facit skickas aldrig till klienten förrän efter en godkänd gissning.**
+1. Gå till [vercel.com](https://vercel.com), logga in med GitHub.
+2. **Add New… → Project** → välj `ranglistan`-repot.
+3. Under **Environment Variables**, lägg till:
+   - `NEXT_PUBLIC_SUPABASE_URL` = din Project URL från Supabase
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY` = din anon public key från Supabase
+4. Klicka **Deploy**. Efter ~1 minut får du en live-URL, t.ex.
+   `ranglistan.vercel.app`.
 
-1. `useKartanRound` hämtar bara frågan (`titel`), inte svaret
-2. Spelaren gissar → `useSubmitKartanGuess` anropar `submit_kartan_guess`-RPC:en
-3. RPC:en (SECURITY DEFINER) validerar, beräknar poäng server-side, sparar
-   gissningen (en per spelare/runda, enforcerat av en UNIQUE-constraint) och
-   returnerar facit + poäng i samma svar
-4. `KartanSvgMap` använder det returnerade facit för zoom+glow-avslöjandet
+Klart! Skapa ett konto på sidan (användarnamn + lösenord) och spela.
 
-## Vad som INTE är klart än
+---
 
-- **Autentisering/spelare-koppling**: `page.tsx` har en hårdkodad `DEMO_SPELARE_ID`.
-  Byt ut mot er befintliga spelar-/session-context.
-- **Admin-gränssnitt** för att skapa kategorier och rundor (`kartan_kategorier`,
-  `kartan_rundor`) — just nu måste dessa läggas in manuellt eller via ett separat
-  script. Säg till om ni vill ha det som nästa byggsteg.
-- **npm-paket som behöver installeras**: `d3-geo` och `@types/geojson`
-  (`npm install d3-geo @types/geojson`)
-- **`@/lib/supabase/client`**: hooken förutsätter att ni redan har er vanliga
-  Supabase-klient-helper på den sökvägen (samma som i Spelkväll/KanDuAlla). Justera
-  importvägen om er struktur skiljer sig.
-- **Kommun-nivå-läge**: `municipality-centroids.json` och seed-filen för 290
-  kommuner finns redan förberedda, men `LanKlickGame` pekar bara på
-  `sweden-regions.geojson` idag. Byt `geoSource` till `"sweden-municipalities"`
-  när ni vill gå ner på kommunnivå.
+## Köra lokalt (valfritt, för utveckling)
 
-## Att testa lokalt
+```bash
+npm install
+cp .env.local.example .env.local   # fyll i dina Supabase-värden
+npm run dev
+```
 
-1. Kör SQL-filerna i ordning i Supabase (001 → 002 → 003)
-2. Lägg in minst en rad i `kartan_kategorier` och en i `kartan_rundor` för
-   respektive typ (`lan` / `punkt`), peka på ett `ratt_plats_id` eller
-   `ratt_lat`/`ratt_lon` från seed-datan
-3. Klistra in de riktiga `kategori_id`:na i `page.tsx`
-4. `npm install d3-geo @types/geojson` och starta dev-servern
+Öppna [http://localhost:3000](http://localhost:3000).
+
+---
+
+## Lägga till fler listor
+
+Öppna `supabase/seed.sql` och kopiera ett av blocken (t.ex. listan om
+planeterna, som är kortast). Byt ut:
+
+- `slug` — unik URL-del, t.ex. `sveriges-landskap`
+- `title`, `subtitle`, `source`
+- `value_format` — `'plain'` (tal + `value_suffix`), `'millions_inv'`
+  (delar på en miljon, för folkmängd) eller `'year'` (visar "tillträdde XXXX")
+- listan med `(rang, namn, värde, alias-array)`
+
+Kör sedan bara det nya blocket i Supabase SQL Editor — ingen ny kod eller
+deploy behövs, listan dyker upp på startsidan automatiskt (så länge
+`category_id` pekar på en befintlig kategori).
+
+## Kända begränsningar / nästa steg
+
+- Autentiseringen körs client-side (ingen SSR-skyddad routing). Fungerar bra
+  för ett litet spel, men är inte hårdvaru-säkert mot en påstridig angripare.
+- `results`-tabellen sparar varje spelomgång men det finns ännu ingen
+  topplista i gränssnittet — bra nästa steg om ni vill ha tävlingsmoment.
+- Fler listor (t.ex. NHL, Nobelpristagare, Sveriges landskap, huvudstäder i
+  Europa) kan läggas till i omgångar — hör av dig när du vill ha nästa batch.
